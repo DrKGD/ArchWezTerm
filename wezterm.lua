@@ -130,6 +130,11 @@ return {
     saturation = 0.35,
   },
 
+	inactive_pane_hsb = {
+		saturation = 0.8,
+		brightness = 0.6
+	},
+
 	-- Disable default keybindings
 	disable_default_key_bindings = true,
 	canonicalize_pasted_newlines = false,
