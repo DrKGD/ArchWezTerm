@@ -92,7 +92,7 @@ return {
 	front_end = "OpenGL",
 	font=font_fb('Hurmit Nerd Font'),
 	font_size = 10,
-	line_height = 0.9,
+	line_height = 1.0,
 	color_scheme = "Wryan",
 
 	-- Exit behavior
@@ -131,8 +131,8 @@ return {
   },
 
 	inactive_pane_hsb = {
-		saturation = 0.8,
-		brightness = 0.6
+		saturation = 0.4,
+		brightness = 0.4
 	},
 
 	-- Disable default keybindings
