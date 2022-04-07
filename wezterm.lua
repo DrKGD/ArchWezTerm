@@ -1,13 +1,67 @@
 local wezterm = require('wezterm')
 
--- Leader Active
-wezterm.on("update-right-status", function(window)
-  local leader = ""
+local MIN_FONT_SIZE = 8.0
+local USE_FONT_SIZE = 10.0
+local MAX_FONT_SIZE = 14.0
+local STEP = 1.0 
+
+wezterm.on("update-right-status", function(window) local leader = ""
   if window:leader_is_active() then
     leader = "LEADER"
   end
   window:set_right_status(leader)
 end);
+
+-- Decrease font size 
+wezterm.on("capped-decreasefontsize", function(window, _)
+	local overrides = window:get_config_overrides() or {}
+	if not overrides.font_size then
+		overrides.font_size = USE_FONT_SIZE - STEP
+	else
+		overrides.font_size = overrides.font_size - STEP 
+	end
+
+	if overrides.font_size < MIN_FONT_SIZE then
+		overrides.font_size = MIN_FONT_SIZE end
+		
+	window:set_config_overrides(overrides)	
+end)
+
+-- Increase font size 
+wezterm.on("capped-increasefontsize", function(window, _)
+	local overrides = window:get_config_overrides() or {}
+	if not overrides.font_size then
+		overrides.font_size = USE_FONT_SIZE + STEP 
+	else
+		overrides.font_size = overrides.font_size + STEP 
+	end
+		
+	if overrides.font_size > MAX_FONT_SIZE then
+		overrides.font_size = MAX_FONT_SIZE end
+
+	window:set_config_overrides(overrides)	
+end)
+
+-- Reset all the current changes to fontsize
+wezterm.on("reset-fontsize", function(window, _)
+	local overrides = window:get_config_overrides() or {}
+	overrides.font_size = nil 
+
+	window:set_config_overrides(overrides)
+end)
+
+-- Opacity
+wezterm.on("toggle-opacity", function(window, pane)
+	local overrides = window:get_config_overrides() or {}
+	if not overrides.window_background_opacity then
+		-- No opaque-ness
+		overrides.window_background_opacity = 1.0
+	else
+		-- Restore set value
+		overrides.window_background_opacity = nil
+	end
+	window:set_config_overrides(overrides)
+end)
 
 -- Local
 local ispath = function(p) return p:match"/" end
@@ -78,21 +132,42 @@ wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_wid
 	}
 end)
 
+-- TRAP: Can't implement that yet
+wezterm.on("send-through-nvim", function(window, pane)
 
-local function font_fb(font, params)
-	local names = {font, "Noto Color Emoji", "JetBrains Mono"}
-	return wezterm.font_with_fallback(names, params)
+end)
+
+local function font_fb(font)
+	-- Main font
+	-- Symbols font
+	-- Secondary Symbols font
+	-- Emoji Font
+
+	local selected_fonts = {
+		font,
+		-- Do not use Mono, they do not behave like you'd expect
+		{ family = "Noto Color Emoji", weight="Regular", stretch="Normal", style="Normal"},
+		{ family = "Symbols Nerd Font", weight="Regular", stretch="Normal", style="Normal"},
+		-- { family = "Nerd Emoji", weight="Regular", stretch="Normal", style="Normal"}
+	}
+
+	return wezterm.font_with_fallback(selected_fonts)
 end
 
 return {
 	animation_fps = 144,
   check_for_updates = true,
+	warn_about_missing_glyphs = false,
 
 	-- Aesthetics
 	front_end = "OpenGL",
-	font=font_fb('Hurmit Nerd Font'),
-	font_size = 10,
-	line_height = 1.0,
+	font=font_fb({family= 'scientifica', weight="Bold"}),						-- Favorite
+
+	font_size = USE_FONT_SIZE,
+	adjust_window_size_when_changing_font_size = false,
+  freetype_load_flags = "NO_HINTING",
+	freetype_load_target = "HorizontalLcd",
+	line_height = 0.85,
 	color_scheme = "Wryan",
 
 	-- Exit behavior
@@ -102,11 +177,12 @@ return {
 	-- Tab Bar below and usually hidden
 	use_fancy_tab_bar = true,
 	window_frame = {
-		font = font_fb('scientifica'),
-		font_size = 13.0,
+		-- Gohu GohuFont is a bitmap font, no scale allowed
+		font = font_fb('Gohu GohuFont'),
+		font_size = 10.0,
 	},
 
-	hide_tab_bar_if_only_one_tab = false,
+	hide_tab_bar_if_only_one_tab = true,
 	tab_bar_at_bottom = true,
 	tab_max_width = 50,
 
@@ -123,7 +199,7 @@ return {
 	-- Background
 	-- window_background_image = "D:\\hackers_2.jpg",
 	text_background_opacity = 1.0,
-	window_background_opacity = 0.95,
+	window_background_opacity = 0.7,
 	window_background_image_hsb = {
     brightness = 0.025,
     hue = 1.0,
@@ -199,9 +275,11 @@ return {
 
 		-- Resize font size
 		-- TODO: Handle window position before and after fullscreen
-		{ key = '=', mods = "CTRL", action = "IncreaseFontSize"},
-		{ key = '-', mods = "CTRL", action = "DecreaseFontSize"},
-		{ key = '`', mods = "CTRL", action = "ResetFontSize" },
+		-- FIX: Disabled, bitmap do not support these
+		{ key = '=', mods = "CTRL", action = wezterm.action { EmitEvent = 'capped-increasefontsize'}},
+		{ key = '-', mods = "CTRL", action = wezterm.action { EmitEvent = 'capped-decreasefontsize'}},
+		{ key = '`', mods = "CTRL", action = wezterm.action { EmitEvent = 'reset-fontsize'}},
+		{key="r", mods="LEADER", action="ReloadConfiguration"},
 
 		--- Extra
 		-- Toggle Opacity
@@ -210,6 +288,11 @@ return {
 		-- Copy paste
 		{key = "c", mods = "CTRL|SHIFT", action = wezterm.action { CopyTo="Clipboard"}},
 		{key = "v", mods = "CTRL|SHIFT", action = wezterm.action { PasteFrom="Clipboard" }},
+
+		-- Page Up / Page down
+		-- TRAP: Binding those will prevent application in-terminal from using them...
+    -- {key="PageUp",  action=wezterm.action{ScrollByPage=-0.5}},
+    -- {key="PageDown",  action=wezterm.action{ScrollByPage=0.5}},
 
 		-- Toggle fullscreen
 		-- TODO: Handle window position before and after fullscreen
