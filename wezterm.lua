@@ -168,7 +168,7 @@ return {
   freetype_load_flags = "NO_HINTING",
 	freetype_load_target = "HorizontalLcd",
 	line_height = 0.85,
-	color_scheme = "Wryan",
+	color_scheme = "Ollie",
 
 	-- Exit behavior
 	window_close_confirmation = "NeverPrompt",
