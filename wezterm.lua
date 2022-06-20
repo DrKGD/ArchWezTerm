@@ -1,8 +1,47 @@
 local wezterm = require('wezterm')
 
-local MIN_FONT_SIZE = 8.0
-local USE_FONT_SIZE = 10.0
-local MAX_FONT_SIZE = 14.0
+-- Determine which computer
+local PROFILE = (function()
+	local lup = {
+		['DESKTOP-DRKGD'] = 'DESKTOP',
+		['LAPTOP-DRKGD'] = 'LAPTOP'
+	}
+
+	local handle = io.popen("cat /etc/hostname | tr -d '\n'")
+	local result = handle:read("*a")
+	handle:close()
+
+	return lup[result] or nil
+end)()
+
+-- Font sizes
+local MIN_FONT_SIZE = (function()
+	local lup = {
+		['DESKTOP'] = 8.0,
+		['LAPTOP'] = 12.0,
+	}
+
+	return lup[PROFILE]
+end)()
+
+local USE_FONT_SIZE = (function()
+	local lup = {
+		['DESKTOP'] = 10.0,
+		['LAPTOP'] = 14.0,
+	}
+
+	return lup[PROFILE]
+end)()
+
+local MAX_FONT_SIZE = (function()
+	local lup = {
+		['DESKTOP'] = 14.0,
+		['LAPTOP'] = 16.0,
+	}
+
+	return lup[PROFILE]
+end)()
+
 local STEP = 1.0 
 
 wezterm.on("update-right-status", function(window) local leader = ""
@@ -214,7 +253,7 @@ return {
 
 	-- Disable default keybindings
 	disable_default_key_bindings = true,
-	canonicalize_pasted_newlines = false,
+	canonicalize_pasted_newlines = "None",
 
 	-- No padding (distance from edges)
 	enable_scroll_bar = false,
@@ -294,6 +333,9 @@ return {
 		-- TRAP: Binding those will prevent application in-terminal from using them...
     -- {key="PageUp",  action=wezterm.action{ScrollByPage=-0.5}},
     -- {key="PageDown",  action=wezterm.action{ScrollByPage=0.5}},
+
+		-- Debug
+    {key="l", mods="CTRL|SHIFT", action="ShowDebugOverlay"},
 
 		-- Toggle fullscreen
 		-- TODO: Handle window position before and after fullscreen
