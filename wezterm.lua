@@ -161,7 +161,8 @@ return {
 
 	-- Aesthetics
 	front_end = "OpenGL",
-	font=font_fb({family= 'scientifica', weight="Bold"}),						-- Favorite
+	-- TODO: Revert this after the presentation
+	font = font_fb({family= 'scientifica', weight="Bold"}),						-- Favorite
 
 	font_size = USE_FONT_SIZE,
 	adjust_window_size_when_changing_font_size = false,
